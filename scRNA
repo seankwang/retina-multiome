@@ -209,18 +209,18 @@ colors <- c("#cfba04", "#44AA99", "#852c25", "#BEBEBE", "#db188d", "#feb3f6", "#
 DimPlot(test, cols=colors, pt.size = 0.1, order = c("Rod", "Astrocyte", "Microglia", "AII-amacrine", "Gly-amacrine", "Retinal ganglion cell", "GABA-amacrine", "Horizontal", "Rod bipolar", "ON-cone bipolar", "Cone", "OFF-cone bipolar", "Muller glia"))
 
 #Generate dot plot
-dot_genes <- c("C1QA", "HLA-DRA",	#Microglia
+dot_genes <- c("C1QA", "HLA-DRA", #Microglia
 	"PAX2", "GFAP", #Astrocyte
-	"CALB2", "GJD2", #Amacrine (AII)
-	"NEFM", "NEFL", #RGC
-	"SLC6A5", "SLC6A9", #Amacrine (gly-amacrine)
-	"ONECUT2", "ONECUT1",   #Horizontal
-	"GAD2", "GAD1", #Amacrine (GABA-amacrine)
-	"OPN1LW", "ARR3",   #Cone
-	"NIF3L1", "PRKCA",	#Rod bipolar
+	"CALB2", "GJD2", #AII-amacrine 
+	"NEFM", "NEFL", #Retinal ganglion cell
+	"SLC6A9", #Gly-amacrine
+	"ONECUT2", "ONECUT1", #Horizontal
+	"GAD2", "GAD1", #GABA-amacrine
+	"OPN1LW", "ARR3", #Cone
+	"NIF3L1", "PRKCA", #Rod bipolar
 	"ISL1", "GRM6", #ON-cone bipolar
-	"GLUL", "RLBP1", #Muller
-	"GRIK1",    #OFF-cone bipolar
+	"GLUL", "RLBP1", #Muller glia
+	"GRIK1", #OFF-cone bipolar
 	"NR2E3", "PDE6A" #Rod   
 )
 DotPlot(object = test, features = dot_genes)

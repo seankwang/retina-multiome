@@ -242,5 +242,5 @@ col <- gsub("6_", "LGS2OSret#", col)
 col <- gsub("7_", "LGS3ODret#", col) 
 col <- gsub("8_", "LGS3OSret#", col) 
 
-saveRDS(col, file="Seurat/postHarmony/eightRetinas_iteration5_cellList")
+saveRDS(col, file="Seurat/postHarmony/eightRetinas_cellList")
 

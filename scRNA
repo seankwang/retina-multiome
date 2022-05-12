@@ -1,0 +1,246 @@
+#In R. For files, first create a wd folder and subfolder for each sample and copy filtered_feature_bc_matrix.h5, atac_fragments.tsv.gz, and atac_fragments.tsv.gz.tbi to subfolder
+
+#Set sample, repeat for each sample
+sample <- "LVG1ODret"
+
+#Set working directory
+setwd(paste("/oak/stanford/groups/howchang/users/seankw/Multiome/ArchR/", sample, "_wd", sep=""))
+suppressPackageStartupMessages(library(ArchR))
+addArchRGenome("hg38")
+addArchRThreads(16)
+
+inputFiles <- getInputFiles(sample)[1]
+names(inputFiles) <- sample
+
+#Create Arrow Files and ArchR project
+createArrowFiles(inputFiles, force = TRUE) 
+ArrowFiles <- paste(sample, ".arrow", sep="") 
+proj <- ArchRProject(ArrowFiles)
+
+#Import scRNA data
+seRNA <- import10xFeatureMatrix(
+    input = c(paste(sample, "/filtered_feature_bc_matrix.h5", sep="")),
+    names = c(sample)
+)
+seRNA
+proj <- addGeneExpressionMatrix(input = proj, seRNA = seRNA, force = TRUE)
+
+#Quality control filtering
+origProj <- proj
+proj <- proj[proj$TSSEnrichment > 6 & proj$nFrags > 2500 & !is.na(proj$Gex_nUMI)]
+proj <- proj[proj$Gex_nUMI > 200 & proj$Gex_nUMI < 50000 & proj$Gex_MitoRatio < 0.01 & proj$Gex_RiboRatio < 0.05]
+
+#Doublet filtration
+proj <- addDoubletScores(proj)
+proj <- filterDoublets(proj)
+
+#Obtain filtered cell list for Seurat
+cells <- proj$cellNames
+cells <- gsub(paste(sample, "#", sep=""), "", cells)  
+
+#Select cells in Seurat
+setwd("/oak/stanford/groups/howchang/users/seankw/Multiome")
+library(Seurat)
+matrix <- Read10X(paste("cellranger/", sample, "/outs/filtered_feature_bc_matrix/", sep=""))	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+scRNA <- subset(scRNA, cells = cells)
+
+scRNA <- NormalizeData(scRNA)
+scRNA <- FindVariableFeatures(scRNA, selection.method = "vst", nfeatures = 2000)
+all.genes <- rownames(scRNA)
+scRNA <- ScaleData(scRNA, features = all.genes)
+scRNA <- RunPCA(scRNA, features = VariableFeatures(object = scRNA), verbose = FALSE)
+ElbowPlot(scRNA)
+scRNA <- RunUMAP(scRNA, dims = 1:20)
+DimPlot(scRNA)
+
+test <- FindNeighbors(scRNA, dims = 1:20)	
+test <- FindClusters(test, resolution = 0.5)
+test <- RunUMAP(test, dims = 1:20)
+DimPlot(test, reduction = "umap")
+table(Idents(test))	#Cells per cluster
+
+#Identify markers
+library(dplyr)
+scRNA.markers <- FindAllMarkers(test, only.pos = TRUE, min.pct = 0.5, logfc.threshold = 1)
+
+#Save cells
+saveRDS(cells, file=paste("Seurat/preHarmony/CellLists postArchRFilterDoublets/", sample, "_cells", sep=""))
+
+#############################################
+#Load scRNA files
+#############################################
+matrix <- Read10X("cellranger/LVGret1/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LVGret1_cells")
+scRNA1 <- subset(scRNA, cells = cells)
+
+matrix <- Read10X("cellranger/LVGret2/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LVGret2_cells")
+scRNA2 <- subset(scRNA, cells = cells)
+
+matrix <- Read10X("cellranger/LGS1ODret/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LGS1ODret_cells")
+scRNA3 <- subset(scRNA, cells = cells)
+
+matrix <- Read10X("cellranger/LGS1OSret/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LGS1OSret_cells")
+scRNA4 <- subset(scRNA, cells = cells)
+
+matrix <- Read10X("cellranger/LGS2ODret/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LGS2ODret_cells")
+scRNA5 <- subset(scRNA, cells = cells)
+
+matrix <- Read10X("cellranger/LGS2OSret/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LGS2OSret_cells")
+scRNA6 <- subset(scRNA, cells = cells)
+
+matrix <- Read10X("cellranger/LGS3ODret/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LGS3ODret_cells")
+scRNA7 <- subset(scRNA, cells = cells)
+
+matrix <- Read10X("cellranger/LGS3OSret/outs/filtered_feature_bc_matrix/")	#Directory, not .h5 file
+scRNA <- CreateSeuratObject(counts = matrix$`Gene Expression`, min.cells = 0, min.features = 0, project = "seurat")
+cells <- readRDS("Seurat/preHarmony/CellLists postArchRFilterDoublets/LGS3OSret_cells")
+scRNA8 <- subset(scRNA, cells = cells)
+
+rm(matrix)
+rm(scRNA)
+rm(cells)
+
+##############################################
+#Batch correction with Harmony 
+##############################################
+
+library(cowplot)
+library(harmony)
+
+#Create merged Seurat object
+merged <- merge(scRNA1, y = c(scRNA2, scRNA3, scRNA4, scRNA5, scRNA6, scRNA7, scRNA8), add.cell.ids = c("1", "2", "3", "4", "5", "6", "7", "8"), project = "retina")
+merged
+
+merged <- NormalizeData(merged)
+merged <- FindVariableFeatures(merged, selection.method = "vst", nfeatures = 2000)
+all.genes <- rownames(merged)
+merged <- ScaleData(merged, features = all.genes)
+merged <- RunPCA(merged, features = VariableFeatures(object = merged), verbose = FALSE)
+ElbowPlot(merged)	#Determine dimensionality
+
+merged@meta.data$ID <- c(rep("1", ncol(scRNA1)), rep("2", ncol(scRNA2)), rep("3", ncol(scRNA3)), rep("4", ncol(scRNA4)), rep("5", ncol(scRNA5)), rep("6", ncol(scRNA6)), rep("7", ncol(scRNA7)), rep("8", ncol(scRNA8)))
+
+#Check uncorrected PCs
+options(repr.plot.height = 5, repr.plot.width = 12)
+p1 <- DimPlot(object = merged, reduction = "pca", pt.size = .1, group.by = "ID")
+p2 <- VlnPlot(object = merged, features = "PC_1", group.by = "ID", pt.size = .1)
+plot_grid(p1,p2)
+
+#Run Harmony
+options(repr.plot.height = 2.5, repr.plot.width = 6)
+merged <- merged %>% 
+    RunHarmony("ID", plot_convergence = TRUE)
+
+#Check corrected PCs
+options(repr.plot.height = 5, repr.plot.width = 12)
+p1 <- DimPlot(object = merged, reduction = "harmony", pt.size = .1, group.by = "ID")
+p2 <- VlnPlot(object = merged, features = "harmony_1", group.by = "ID", pt.size = .1)
+plot_grid(p1,p2)
+
+#Save here, or load if restarting from prior session 
+saveRDS(merged, file = "Seurat/postHarmony/eightRetinasMerged_preUMAP")
+# merged <- readRDS("Seurat/postHarmony/sixRetinasMerged_preUMAP")
+
+#Generate UMAP
+test <- merged %>% 
+    RunUMAP(reduction = "harmony", dims = 1:20) %>% 
+    FindNeighbors(reduction = "harmony", dims = 1:20) %>% 
+    FindClusters(resolution = 0.5) %>% 
+    identity()
+
+#View clusters
+options(repr.plot.height = 4, repr.plot.width = 10)
+DimPlot(test, reduction = "umap", pt.size = .1)
+table(Idents(test))	#Cells per cluster
+
+#View clusters by sample
+options(repr.plot.height = 4, repr.plot.width = 10)
+DimPlot(test, reduction = "umap", group.by = "ID", pt.size = .1, split.by = 'ID')
+
+#############################################################################
+
+#Identify markers
+library(dplyr)
+scRNA.markers <- FindAllMarkers(test, only.pos = TRUE, min.pct = 0.5, logfc.threshold = 1)
+display <- scRNA.markers %>%
+    group_by(cluster) %>%
+    slice_max(n = 2, order_by = avg_logFC)
+print.data.frame(display)
+
+#Remove clusters without markers or with doublets
+test <- subset(x = test, subset = seurat_clusters == "9", invert = TRUE)
+
+#Recluster (repeat as needed)
+test <- test %>% 
+    RunUMAP(dims = 1:20) %>% 
+    FindNeighbors(dims = 1:20) %>% 
+    FindClusters(resolution = 0.5) %>% 
+    identity()
+DimPlot(test, reduction = "umap", pt.size = .1)
+table(Idents(test))	#Cells per cluster
+
+#Visually confirm markers
+FeaturePlot(test, reduction = "umap", features = c("ARR3"))
+VlnPlot(test, features = c("GRM6"), pt.size = 0)
+
+#Assign clusters
+new.cluster.ids <- c("Rod", "Rod bipolar", "Cone", "Muller glia", "Muller glia", "OFF-cone bipolar", "Horizontal", "ON-cone bipolar", "OFF-cone bipolar", "GABA-amacrine", "Gly-amacrine", "ON-cone bipolar", "GABA-amacrine", "ON-cone bipolar", "OFF-cone bipolar", "OFF-cone bipolar", "Retinal ganglion cell", "OFF-cone bipolar", "AII-amacrine", "Astrocyte", "Microglia", "ON-cone bipolar")
+names(new.cluster.ids) <- levels(test)
+test <- RenameIdents(test, new.cluster.ids)
+
+#Custom palette
+colors <- c("#cfba04", "#44AA99", "#852c25", "#BEBEBE", "#db188d", "#feb3f6", "#4c6bf1", "#5b5d67", "#8FCE00", "#00ecfa", "#fc9003", "#8814db", "#117733")
+
+#Output UMAP
+DimPlot(test, cols=colors, pt.size = 0.1, order = c("Rod", "Astrocyte", "Microglia", "AII-amacrine", "Gly-amacrine", "Retinal ganglion cell", "GABA-amacrine", "Horizontal", "Rod bipolar", "ON-cone bipolar", "Cone", "OFF-cone bipolar", "Muller glia"))
+
+#Generate dot plot
+dot_genes <- c("C1QA", "HLA-DRA",	#Microglia
+	"PAX2", "GFAP", #Astrocyte
+	"CALB2", "GJD2", #Amacrine (AII)
+	"NEFM", "NEFL", #RGC
+	"SLC6A5", "SLC6A9", #Amacrine (gly-amacrine)
+	"ONECUT2", "ONECUT1",   #Horizontal
+	"GAD2", "GAD1", #Amacrine (GABA-amacrine)
+	"OPN1LW", "ARR3",   #Cone
+	"NIF3L1", "PRKCA",	#Rod bipolar
+	"ISL1", "GRM6", #ON-cone bipolar
+	"GLUL", "RLBP1", #Muller
+	"GRIK1",    #OFF-cone bipolar
+	"NR2E3", "PDE6A" #Rod   
+)
+DotPlot(object = test, features = dot_genes)
+
+saveRDS(test, file = "Seurat/postHarmony/eightRetinas_postUMAP")
+
+##############################################
+#Prepare cell list for ArchR
+##############################################
+col <- colnames(test)
+
+#Rename cells to match ArchR names: col <- gsub("[remove]", "[include]", col)  
+col <- gsub("1_", "LVGret1#", col)  
+col <- gsub("2_", "LVGret2#", col)  
+col <- gsub("3_", "LGS1ODret#", col) 
+col <- gsub("4_", "LGS1OSret#", col) 
+col <- gsub("5_", "LGS2ODret#", col) 
+col <- gsub("6_", "LGS2OSret#", col) 
+col <- gsub("7_", "LGS3ODret#", col) 
+col <- gsub("8_", "LGS3OSret#", col) 
+
+saveRDS(col, file="Seurat/postHarmony/eightRetinas_iteration5_cellList")
+

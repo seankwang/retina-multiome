@@ -1,7 +1,7 @@
 #In R. For files, first create a wd folder and subfolder for each sample and copy filtered_feature_bc_matrix.h5, atac_fragments.tsv.gz, and atac_fragments.tsv.gz.tbi to subfolder
 
 #Set sample, repeat for each sample
-sample <- "LVG1ODret"
+sample <- "LVGret1"
 
 #Set working directory
 setwd(paste("/oak/stanford/groups/howchang/users/seankw/Multiome/ArchR/", sample, "_wd", sep=""))
